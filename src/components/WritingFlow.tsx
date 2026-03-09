@@ -52,6 +52,9 @@ const RELATIONSHIP_TYPES: RelationshipType[] = [
 export default function WritingFlow() {
   const [step, setStep] = useState<Step>("relationship");
   const [form, setForm] = useState<FormData>(INITIAL_FORM);
+  const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const [confirmedDate, setConfirmedDate] = useState<string | null>(null);
 
   const tomorrow = useMemo(() => {
     const d = new Date();
@@ -81,6 +84,40 @@ export default function WritingFlow() {
       form.senderEmail.trim() &&
       (form.deliveryOption === "surprise" || form.deliveryDate)
     );
+  }
+
+  async function handleSubmit() {
+    setSubmitting(true);
+    setSubmitError(null);
+    try {
+      const res = await fetch("/api/messages", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          senderName: form.senderName,
+          senderEmail: form.senderEmail,
+          recipientName: form.recipientName,
+          recipientEmail: form.recipientEmail,
+          relationshipType: form.relationshipType,
+          messageText: form.messageText,
+          deliveryOption: form.deliveryOption,
+          deliveryDate: form.deliveryDate || undefined,
+        }),
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || "Something went wrong.");
+      }
+      const data = await res.json();
+      setConfirmedDate(data.deliveryDate);
+      setStep("confirmed");
+    } catch (err) {
+      setSubmitError(
+        err instanceof Error ? err.message : "Something went wrong."
+      );
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   function getDeliveryDateDisplay(): string {
@@ -419,13 +456,19 @@ export default function WritingFlow() {
               Go back
             </button>
             <button
-              onClick={() => setStep("confirmed")}
+              onClick={handleSubmit}
+              disabled={submitting}
               className="px-8 py-3 bg-green text-white rounded-full font-medium
-                hover:opacity-90 transition-opacity cursor-pointer"
+                hover:opacity-90 transition-opacity disabled:opacity-50 cursor-pointer"
             >
-              Send this Bluebell
+              {submitting ? "Sending..." : "Send this Bluebell"}
             </button>
           </div>
+          {submitError && (
+            <p className="text-sm text-red-500 text-center mt-4">
+              {submitError}
+            </p>
+          )}
         </div>
       )}
 
@@ -440,7 +483,14 @@ export default function WritingFlow() {
             {form.recipientName} will receive your message on
           </p>
           <p className="text-bluebell font-medium mb-8">
-            {getDeliveryDateDisplay()}
+            {confirmedDate
+              ? new Date(confirmedDate).toLocaleDateString("en-US", {
+                  weekday: "long",
+                  year: "numeric",
+                  month: "long",
+                  day: "numeric",
+                })
+              : getDeliveryDateDisplay()}
           </p>
           <p className="text-sm text-plum/40 mb-8">
             We&apos;ll send you a confirmation email at {form.senderEmail}

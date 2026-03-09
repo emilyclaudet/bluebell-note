@@ -1,0 +1,52 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum RelationshipType {
+  friend
+  partner
+  parent
+  sibling
+  coworker
+  mentor
+  other
+}
+
+enum MessageStatus {
+  scheduled
+  delivered
+  opened
+}
+
+model Message {
+  id               String           @id @default(uuid()) @db.Uuid
+  senderName       String           @map("sender_name") @db.VarChar(100)
+  senderEmail      String           @map("sender_email") @db.VarChar(255)
+  recipientName    String           @map("recipient_name") @db.VarChar(100)
+  recipientEmail   String           @map("recipient_email") @db.VarChar(255)
+  relationshipType RelationshipType @map("relationship_type")
+  messageText      String           @map("message_text")
+  deliveryDate     DateTime         @map("delivery_date") @db.Date
+  status           MessageStatus    @default(scheduled)
+  createdAt        DateTime         @default(now()) @map("created_at")
+  theme            String?          @db.VarChar(50)
+  images           Image[]
+
+  @@map("messages")
+}
+
+model Image {
+  id        String  @id @default(uuid()) @db.Uuid
+  messageId String  @map("message_id") @db.Uuid
+  url       String  @db.VarChar(500)
+  order     Int
+  altText   String? @map("alt_text") @db.VarChar(255)
+  message   Message @relation(fields: [messageId], references: [id], onDelete: Cascade)
+
+  @@map("images")
+}

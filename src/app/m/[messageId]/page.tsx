@@ -1,22 +1,43 @@
-import type { Metadata } from "next";
 import Link from "next/link";
+import { notFound } from "next/navigation";
 import BluebellIcon from "@/components/BluebellIcon";
+import { prisma } from "@/lib/prisma";
 
-// Mock data for the static prototype — will be replaced with DB lookup
-const MOCK_MESSAGE = {
-  id: "demo",
+const DEMO_MESSAGE = {
   senderName: "Alex",
   recipientName: "Jordan",
   messageText:
-    "I just wanted you to know that your friendship means the world to me. Remember that rainy Tuesday when you drove across town just to bring me soup because I mentioned I had a cold? That's the kind of person you are — someone who listens, really listens, and then shows up.\n\nI don't say it enough, but I'm so grateful you're in my life.",
-  relationshipType: "friend",
-  createdAt: new Date().toISOString(),
+    "I just wanted you to know that your friendship means the world to me. Remember that rainy Tuesday when you drove across town just to bring me soup because I mentioned I had a cold? That\u2019s the kind of person you are \u2014 someone who listens, really listens, and then shows up.\n\nI don\u2019t say it enough, but I\u2019m so grateful you\u2019re in my life.",
+  images: [] as { id: string; url: string; altText: string | null }[],
 };
 
-export const metadata: Metadata = {
-  title: `${MOCK_MESSAGE.senderName} sent you a Bluebell`,
-  description: "Someone wrote you a heartfelt message.",
-};
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ messageId: string }>;
+}) {
+  if (!prisma) {
+    return {
+      title: `${DEMO_MESSAGE.senderName} sent you a Bluebell`,
+      description: "Someone wrote you a heartfelt message.",
+    };
+  }
+
+  const { messageId } = await params;
+  const message = await prisma.message.findUnique({
+    where: { id: messageId },
+    select: { senderName: true },
+  });
+
+  if (!message) {
+    return { title: "Message not found" };
+  }
+
+  return {
+    title: `${message.senderName} sent you a Bluebell`,
+    description: "Someone wrote you a heartfelt message.",
+  };
+}
 
 export default async function MessagePage({
   params,
@@ -25,8 +46,31 @@ export default async function MessagePage({
 }) {
   const { messageId } = await params;
 
-  // For now, always show mock data. In production, fetch from DB.
-  const message = { ...MOCK_MESSAGE, id: messageId };
+  let message;
+
+  if (prisma) {
+    const dbMessage = await prisma.message.findUnique({
+      where: { id: messageId },
+      include: { images: { orderBy: { order: "asc" } } },
+    });
+
+    if (!dbMessage) {
+      notFound();
+    }
+
+    // Mark as opened on first view
+    if (dbMessage.status === "delivered") {
+      await prisma.message.update({
+        where: { id: messageId },
+        data: { status: "opened" },
+      });
+    }
+
+    message = dbMessage;
+  } else {
+    // Prototype mode — show demo message
+    message = DEMO_MESSAGE;
+  }
 
   return (
     <div className="min-h-screen bg-mist flex flex-col">
@@ -54,6 +98,21 @@ export default async function MessagePage({
               <div className="font-serif text-lg sm:text-xl leading-relaxed text-plum whitespace-pre-wrap mb-8">
                 {message.messageText}
               </div>
+
+              {/* Images */}
+              {message.images.length > 0 && (
+                <div className="mb-8 space-y-4">
+                  {message.images.map((img) => (
+                    <img
+                      key={img.id}
+                      src={img.url}
+                      alt={img.altText || "Attached image"}
+                      className="w-full rounded-2xl"
+                    />
+                  ))}
+                </div>
+              )}
+
               <div className="text-right">
                 <p className="text-plum/50 text-sm mb-1">With love,</p>
                 <p className="text-plum font-medium text-lg">
