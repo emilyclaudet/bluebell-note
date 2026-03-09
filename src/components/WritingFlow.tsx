@@ -55,6 +55,7 @@ export default function WritingFlow() {
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [confirmedDate, setConfirmedDate] = useState<string | null>(null);
+  const [confirmedId, setConfirmedId] = useState<string | null>(null);
 
   const tomorrow = useMemo(() => {
     const d = new Date();
@@ -110,6 +111,7 @@ export default function WritingFlow() {
       }
       const data = await res.json();
       setConfirmedDate(data.deliveryDate);
+      setConfirmedId(data.id);
       setStep("confirmed");
     } catch (err) {
       setSubmitError(
@@ -492,9 +494,18 @@ export default function WritingFlow() {
                 })
               : getDeliveryDateDisplay()}
           </p>
-          <p className="text-sm text-plum/40 mb-8">
+          <p className="text-sm text-plum/40 mb-4">
             We&apos;ll send you a confirmation email at {form.senderEmail}
           </p>
+          {confirmedId && (
+            <a
+              href={`/m/${confirmedId}`}
+              target="_blank"
+              className="inline-block text-sm text-bluebell hover:text-bluebell-dark underline underline-offset-2 mb-8"
+            >
+              Preview what {form.recipientName} will see
+            </a>
+          )}
           <button
             onClick={() => {
               setForm(INITIAL_FORM);
