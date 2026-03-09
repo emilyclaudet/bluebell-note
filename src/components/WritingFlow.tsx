@@ -476,7 +476,7 @@ export default function WritingFlow() {
 
       {/* Step 6: Confirmation */}
       {step === "confirmed" && (
-        <div className="animate-fade-in text-center py-8">
+        <div className="animate-fade-in flex flex-col items-center py-8">
           <div className="text-5xl mb-4">{"\uD83C\uDF3C"}</div>
           <h2 className="text-2xl font-semibold text-plum mb-2">
             Your Bluebell is on its way
@@ -511,7 +511,7 @@ export default function WritingFlow() {
             <a
               href={`/m/${confirmedId}`}
               target="_blank"
-              className="inline-block text-sm text-bluebell hover:text-bluebell-dark underline underline-offset-2 mt-4"
+              className="text-sm text-bluebell hover:text-bluebell-dark underline underline-offset-2 mt-4"
             >
               Preview what {form.recipientName} will see
             </a>
