@@ -494,18 +494,9 @@ export default function WritingFlow() {
                 })
               : getDeliveryDateDisplay()}
           </p>
-          <p className="text-sm text-plum/40 mb-4">
+          <p className="text-sm text-plum/40 mb-8">
             We&apos;ll send you a confirmation email at {form.senderEmail}
           </p>
-          {confirmedId && (
-            <a
-              href={`/m/${confirmedId}`}
-              target="_blank"
-              className="inline-block text-sm text-bluebell hover:text-bluebell-dark underline underline-offset-2 mb-8"
-            >
-              Preview what {form.recipientName} will see
-            </a>
-          )}
           <button
             onClick={() => {
               setForm(INITIAL_FORM);
@@ -516,6 +507,15 @@ export default function WritingFlow() {
           >
             Send another Bluebell
           </button>
+          {confirmedId && (
+            <a
+              href={`/m/${confirmedId}`}
+              target="_blank"
+              className="inline-block text-sm text-bluebell hover:text-bluebell-dark underline underline-offset-2 mt-4"
+            >
+              Preview what {form.recipientName} will see
+            </a>
+          )}
         </div>
       )}
     </div>
